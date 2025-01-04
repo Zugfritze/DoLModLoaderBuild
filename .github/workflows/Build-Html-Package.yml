@@ -3,13 +3,6 @@ name: Build ModLoader
 run-name: Build ModLoader ${{ inputs.version }}
 
 on:
-#  push:
-#    branches:
-#      - "master"
-#      - "*test*"
-#  pull_request:
-#    branches:
-#      - "master"
   workflow_dispatch:
     inputs:
       version:
@@ -61,24 +54,6 @@ jobs:
       - name: init ModLoader
         working-directory: ${{ github.workspace }}/ModLoader
         run: git submodule update --init --recursive
-
-#      - name: ModLoader
-#        uses: actions/checkout@v4
-#        with:
-#          repository: Lyoko-Jeremie/sugarcube-2-ModLoader
-#          path: ModLoader
-#          ref: master
-#          submodules: recursive
-
-#      - name: DoL
-#        uses: actions/checkout@v4
-#        with:
-#          repository: Vrelnir/degrees-of-lewdity.git
-#          path: DoL
-#          ref: master
-#          github-server-url: 'https://gitgud.io'
-#          submodules: recursive
-
 
       # /ModLoader  Init =========================================
 
@@ -575,25 +550,12 @@ jobs:
 
       # /DoL  Init =========================================
 
-      - name: Build DoL (Linux)
-        if: runner.os != 'Windows'
-        working-directory: ${{ github.workspace }}/DoL
-        run: ./compile.sh
-
       - name: Build DoL (Win)
         if: runner.os == 'Windows'
         working-directory: ${{ github.workspace }}/DoL
         run: ./compile.bat
 
       # /DoL  OK =========================================
-
-#      - name: Upload debug
-#        uses: actions/upload-artifact@v3
-#        with:
-#          name: Html debug-${{ github.sha }}
-#          path: |
-#            ${{ github.workspace }}/DoL/devTools/tweego/storyFormats/sugarcube-2/format.js
-#            ${{ github.workspace }}/ModLoader/out/
 
       - name: Inject ModLoader
         working-directory: ${{ github.workspace }}/ModLoader/out
@@ -622,28 +584,20 @@ jobs:
           srcBase: ${{ github.workspace }}/DoL/
           source: ${{ github.workspace }}/DoL/Degrees of Lewdity VERSION.html.mod-polyfill.html
           target: ${{ github.workspace }}/output
-#      - name: Copy style
-#        uses: Lyoko-Jeremie/js-copy-github-action@master
-#        with:
-#          srcBase: ${{ github.workspace }}/DoL/
-#          source: ${{ github.workspace }}/DoL/style.css
-#          target: ${{ github.workspace }}/output
-#      - name: Copy img
-#        uses: Lyoko-Jeremie/js-copy-github-action@master
-#        with:
-#          srcBase: ${{ github.workspace }}/DoL/
-#          source: ${{ github.workspace }}/DoL/img/**/*
-#          target: ${{ github.workspace }}/output
+
       - name: Copy img (Win)
         if: runner.os == 'Windows'
         run: copy -Path "${{ github.workspace }}/DoL/img" -Destination "${{ github.workspace }}/output" -Recurse
 
       - name: Archive Release (Artifact)
-        uses: thedoctor0/zip-release@0.7.1
-        with:
-          type: 'zip'
-          filename: DoL-ModLoader-${{ github.sha }}.zip
-          directory: ${{ github.workspace }}/output
+        if: runner.os == 'Windows'
+        env:
+          DWARFS_VERSION: 0.10.2
+        run: |
+          Invoke-WebRequest https://github.com/mhx/dwarfs/releases/download/v${{ env.DWARFS_VERSION }}/dwarfs-universal-${{ env.DWARFS_VERSION }}-Windows-AMD64.exe -Out .\dwarfs-universal.exe
+          mkdir ${{ github.workspace }}/out-dwarfs
+          .\dwarfs-universal.exe --tool=mkdwarfs -i ${{ github.workspace }}/output -o ${{ github.workspace }}/out-dwarfs/DoL-ModLoader-${{ github.sha }}.dwarfs
+        shell: pwsh
 
       # make package  OK =========================================
 
@@ -657,7 +611,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: Html Package-${{ github.sha }}
-          path: ${{ github.workspace }}/output/DoL-ModLoader-${{ github.sha }}.zip
+          path: ${{ github.workspace }}/out-dwarfs/DoL-ModLoader-${{ github.sha }}.dwarfs
 
       - name: Get Current Time
         id: time
@@ -669,27 +623,15 @@ jobs:
       - name: Rename Archive (Manually)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          mv "output/DoL-ModLoader-${{ github.sha }}.zip" "output/DoL-ModLoader-${{ github.event.inputs.version }}-${{ github.sha }}.zip"
+          mv "out-dwarfs/DoL-ModLoader-${{ github.sha }}.dwarfs" "out-dwarfs/DoL-ModLoader-${{ github.event.inputs.version }}-${{ github.sha }}.dwarfs"
 
       - name: Archive Release (Releases Manually)
         uses: softprops/action-gh-release@v1
         if: ${{ github.event_name == 'workflow_dispatch' }}
         with:
           files: |
-            output/DoL-ModLoader-${{ github.event.inputs.version }}-${{ github.sha }}.zip
+            out-dwarfs/DoL-ModLoader-${{ github.event.inputs.version }}-${{ github.sha }}.dwarfs
             out-GameOriginalImagePack/GameOriginalImagePack.mod.zip
           name: Release v${{ github.event.inputs.version }}
           tag_name: v${{ github.event.inputs.version }}-${{ github.sha }}
           body: Release v${{ github.event.inputs.version }}-${{ github.sha }}
-
-      - name: Archive Release (Releases Auto)
-        uses: softprops/action-gh-release@v1
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        with:
-          files: |
-            output/DoL-ModLoader-${{ github.sha }}.zip
-            out-GameOriginalImagePack/GameOriginalImagePack.mod.zip
-          name: Auto Release on ${{ steps.time.outputs.time }} (${{ github.sha }})
-          tag_name: auto-${{ github.sha }}-${{ steps.time.outputs.time }}
-          body: Auto Release on ${{ steps.time.outputs.time }} (${{ github.sha }})
-          prerelease: true

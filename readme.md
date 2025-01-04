@@ -1,3 +1,10 @@
+# 使用DwarFS打包
+
+DwarFS 压缩率高，可将打包文件直接挂载为文件夹或磁盘，无需解压上万个文件。
+
+## 如何使用
+
+请自行查看"[DwarFS](https://github.com/mhx/dwarfs)"
 
 # 附带"[ModLoader](https://github.com/Lyoko-Jeremie/sugarcube-2-ModLoader)"的"[Degrees of Lewdity](https://gitgud.io/Vrelnir/degrees-of-lewdity)"预构建发布项目
 
