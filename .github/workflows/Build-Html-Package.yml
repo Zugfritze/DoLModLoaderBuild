@@ -593,10 +593,11 @@ jobs:
         if: runner.os == 'Windows'
         env:
           DWARFS_VERSION: 0.10.2
+          MKDWARFS_OPTIONS: -B8
         run: |
           Invoke-WebRequest https://github.com/mhx/dwarfs/releases/download/v${{ env.DWARFS_VERSION }}/dwarfs-universal-${{ env.DWARFS_VERSION }}-Windows-AMD64.exe -Out .\dwarfs-universal.exe
           mkdir ${{ github.workspace }}/out-dwarfs
-          .\dwarfs-universal.exe --tool=mkdwarfs -i ${{ github.workspace }}/output -o ${{ github.workspace }}/out-dwarfs/DoL-ModLoader-${{ github.sha }}.dwarfs
+          .\dwarfs-universal.exe --tool=mkdwarfs -i ${{ github.workspace }}/output -o ${{ github.workspace }}/out-dwarfs/DoL-ModLoader-${{ github.sha }}.dwarfs ${{ env.MKDWARFS_OPTIONS }}
         shell: pwsh
 
       # make package  OK =========================================
